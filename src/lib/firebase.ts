@@ -6,16 +6,9 @@ const privateKey = (import.meta.env.FIREBASE_PRIVATE_KEY || process.env.FIREBASE
 const clientEmail = import.meta.env.FIREBASE_CLIENT_EMAIL || process.env.FIREBASE_CLIENT_EMAIL;
 
 const serviceAccount = {
-  type: "service_account",
-  project_id: projectId,
-  private_key_id: "2c5e22e9d3363f1b439f518d6b09c261baffd7f4",
-  private_key: privateKey,
-  client_email: clientEmail,
-  client_id: "105112983104663358711",
-  auth_uri: "https://accounts.google.com/o/oauth2/auth",
-  token_uri: "https://oauth2.googleapis.com/token",
-  auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
-  client_x509_cert_url: "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40drandco-001.iam.gserviceaccount.com"
+  projectId: projectId,
+  privateKey: privateKey,
+  clientEmail: clientEmail,
 };
 
 const activeApps = getApps();
