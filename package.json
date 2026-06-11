@@ -12,8 +12,8 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/node": "^10.1.4",
     "@astrojs/sitemap": "^3.7.3",
+    "@astrojs/vercel": "^10.0.8",
     "astro": "^6.4.6",
     "firebase-admin": "^13.10.0",
     "gray-matter": "^4.0.3",
