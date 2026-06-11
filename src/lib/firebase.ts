@@ -28,5 +28,16 @@ if (!activeApps.length && projectId) {
   console.warn("Firebase initialization skipped: FIREBASE_PROJECT_ID is missing.");
 }
 
-export const db = projectId ? getFirestore() : null;
+const dummyDb = {
+  collection: () => ({
+    doc: () => ({
+      get: async () => ({ exists: false, data: () => null }),
+      set: async () => {},
+      delete: async () => {}
+    }),
+    get: async () => ({ docs: [] })
+  })
+};
+
+export const db = projectId ? getFirestore() : (dummyDb as any);
 
