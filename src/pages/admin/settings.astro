@@ -1,0 +1,130 @@
+---
+import { verifyAdminSession } from '../../lib/auth';
+import SEO from '../../components/SEO.astro';
+import '../../styles/global.css';
+import { db } from '../../lib/firebase';
+
+const isAuthenticated = await verifyAdminSession(Astro.request, Astro.cookies);
+
+if (!isAuthenticated) {
+  Astro.cookies.delete('admin_session', { path: '/' });
+  return Astro.redirect('/admin/login');
+}
+
+let siteTitle = 'DineshReddy&Co';
+let siteDescription = 'Admin Dashboard';
+
+try {
+	const doc = await db.collection('site_content').doc('settings').get();
+	if (doc.exists) {
+		const data = doc.data();
+		if (data?.siteTitle) siteTitle = data.siteTitle;
+		if (data?.siteDescription) siteDescription = data.siteDescription;
+	}
+} catch (e) {
+	console.error('Error fetching settings:', e);
+}
+---
+
+<html lang="en">
+	<head>
+		<SEO title="Settings | DineshReddy&Co" description="Admin Dashboard Settings" noindex={true} />
+	</head>
+	<body>
+		<main class="container admin-layout">
+			<aside class="glass-panel" style="padding: 1.5rem;">
+				<h2 style="font-size: 1.5rem; margin-bottom: 2rem;">Admin Panel</h2>
+				<nav class="admin-sidebar">
+					<a href="/admin" class="admin-nav-link">Dashboard</a>
+					<a href="/admin/apps" class="admin-nav-link">Manage Apps</a>
+					<a href="/admin/policies" class="admin-nav-link">Manage Policies</a>
+					<a href="/admin/docs" class="admin-nav-link">Manage Docs</a>
+					<a href="/admin/settings" class="admin-nav-link active">Settings</a>
+				</nav>
+				
+				<div style="margin-top: auto; padding-top: 2rem;">
+					<form action="/api/auth/logout" method="POST">
+						<button type="submit" class="admin-nav-link" style="width: 100%; text-align: left; background: none; border: none; cursor: pointer; color: #ffffff;">Logout</button>
+					</form>
+				</div>
+			</aside>
+			
+			<div class="content">
+				<div class="glass-panel mb-4">
+					<h1 style="font-size: 2rem; margin-bottom: 0;">Settings</h1>
+					<p style="margin-bottom: 0;">Manage global site settings.</p>
+				</div>
+
+				<div class="glass-panel" style="text-align: left;">
+					<h2 style="font-size: 1.5rem; margin-bottom: 1rem;">Site Settings</h2>
+					<form id="settings-form">
+						<div class="form-group mb-2">
+							<label class="form-label" for="siteTitle">Site Title</label>
+							<input type="text" id="siteTitle" class="form-input" value={siteTitle} required />
+						</div>
+						<div class="form-group mb-4">
+							<label class="form-label" for="siteDescription">Site Description</label>
+							<textarea id="siteDescription" class="form-input" rows="4" required>{siteDescription}</textarea>
+						</div>
+
+						<button type="submit" class="btn mt-4">Save Settings</button>
+						<div id="settings-msg" class="text-sm mt-2" style="display: none;"></div>
+					</form>
+				</div>
+			</div>
+		</main>
+
+		<script is:inline>
+			const settingsForm = document.getElementById('settings-form');
+			const settingsMsg = document.getElementById('settings-msg');
+
+			settingsForm?.addEventListener('submit', async (e) => {
+				e.preventDefault();
+				const siteTitle = document.getElementById('siteTitle').value;
+				const siteDescription = document.getElementById('siteDescription').value;
+				
+				const btn = settingsForm.querySelector('button[type="submit"]');
+				const ogText = btn ? btn.innerText : '';
+				if (btn) {
+					btn.innerText = 'Saving...';
+					btn.disabled = true;
+				}
+
+				try {
+					const res = await fetch('/api/admin/update-settings', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ siteTitle, siteDescription })
+					});
+
+					if (res.ok) {
+						if (settingsMsg) {
+							settingsMsg.innerText = 'Settings saved successfully!';
+							settingsMsg.style.color = '#48bb78';
+						}
+					} else {
+						if (settingsMsg) {
+							settingsMsg.innerText = 'Failed to save settings.';
+							settingsMsg.style.color = '#e53e3e';
+						}
+					}
+				} catch (err) {
+					if (settingsMsg) {
+						settingsMsg.innerText = 'Network error.';
+						settingsMsg.style.color = '#e53e3e';
+					}
+				} finally {
+					if (settingsMsg) {
+						settingsMsg.style.display = 'block';
+						setTimeout(() => { settingsMsg.style.display = 'none'; }, 3000);
+					}
+					if (btn) {
+						btn.innerText = ogText;
+						btn.disabled = false;
+					}
+				}
+			});
+		</script>
+	</body>
+</html>
+

@@ -1,0 +1,63 @@
+---
+import SEO from '../../components/SEO.astro';
+import '../../styles/global.css';
+import { db } from '../../lib/firebase';
+
+const { slug } = Astro.params;
+if (!slug) {
+	return Astro.redirect('/404');
+}
+
+let policy = null;
+try {
+	const doc = await db.collection('policies').doc(slug).get();
+	if (doc.exists) {
+		policy = doc.data();
+	}
+} catch (e) {
+	console.error('Error fetching policy:', e);
+}
+
+if (!policy) {
+	// Fallback check: Did the user accidentally link to an app or doc using a relative link?
+	try {
+		const appDoc = await db.collection('apps').doc(slug).get();
+		if (appDoc.exists) return Astro.redirect(`/apps/${slug}`);
+		
+		const docFile = await db.collection('docs').doc(slug).get();
+		if (docFile.exists) return Astro.redirect(`/docs/${slug}`);
+	} catch (e) {
+		console.error('Error in fallback check:', e);
+	}
+
+	return Astro.redirect('/404');
+}
+
+const htmlContent = policy.content;
+const updatedDate = new Date(policy.date).toDateString();
+---
+
+<html lang="en">
+	<head>
+		<SEO 
+			title={`${policy.title} | DineshReddy&Co`}
+			description={`Read the ${policy.title} for DineshReddy&Co.`}
+			type="article"
+		/>
+
+		<!-- Analytics -->
+		<script defer src="/_vercel/insights/script.js"></script>
+	</head>
+	<body>
+		<main class="container">
+			<div class="glass-panel mb-4">
+				<a href="/" class="mb-4" style="display: inline-block;">&larr; Back to Home</a>
+				<h1>{policy.title}</h1>
+				<p class="text-sm">Last updated: {updatedDate}</p>
+				<hr class="divider" />
+				<div class="markdown-content" set:html={htmlContent}>
+				</div>
+			</div>
+		</main>
+	</body>
+</html>

@@ -1,0 +1,200 @@
+---
+import SEO from '../../components/SEO.astro';
+import '../../styles/global.css';
+import crypto from 'node:crypto';
+
+// Check if already logged in
+const sessionCookie = Astro.cookies.get('admin_session');
+if (sessionCookie) {
+  return Astro.redirect('/admin');
+}
+
+const csrfToken = crypto.randomUUID();
+Astro.cookies.set('csrf_token', csrfToken, {
+  path: '/',
+  httpOnly: true,
+  secure: import.meta.env.PROD,
+  sameSite: 'lax',
+});
+---
+
+<html lang="en">
+	<head>
+		<SEO 
+			title="Admin Login | DineshReddy&Co"
+			description="Secure Admin Login"
+			noindex={true}
+		/>
+		<meta name="csrf-token" content={csrfToken} />
+	</head>
+	<body style="display: flex; align-items: center; justify-content: center; min-height: 100vh;">
+		<main class="container" style="max-width: 450px; padding-top: 10vh;">
+			<div class="glass-panel text-center">
+				<h1 style="font-size: 2rem;">Admin Login</h1>
+				<p>Restricted access area.</p>
+
+				<!-- Step 1: Email -->
+				<div id="step-email">
+					<form id="email-form" class="form-group mt-4">
+						<p class="mb-4 text-sm" style="color: #a0aec0;">Click below to send a verification code to the registered admin email.</p>
+						<button type="submit" id="send-otp-btn" class="btn" style="width: 100%;">Send OTP</button>
+						<div id="email-error" class="error-msg"></div>
+					</form>
+				</div>
+
+				<!-- Step 2: OTP -->
+				<div id="step-otp" style="display: none;">
+					<p class="text-sm mt-4">Enter the 4-digit code sent to the admin email.</p>
+					<form id="otp-form">
+						<div class="otp-container">
+							<input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required />
+							<input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required />
+							<input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required />
+							<input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required />
+						</div>
+						<button type="submit" class="btn" style="width: 100%; margin-bottom: 1rem;">Verify & Login</button>
+						<div id="otp-error" class="error-msg"></div>
+					</form>
+					<button type="button" id="resend-otp-btn" class="btn" style="width: 100%; background: transparent; border: 1px solid rgba(255,255,255,0.2); color: #fff;" disabled>Resend OTP (30s)</button>
+				</div>
+			</div>
+		</main>
+
+		<script>
+			const emailForm = document.getElementById('email-form') as HTMLFormElement;
+			const otpForm = document.getElementById('otp-form') as HTMLFormElement;
+			const stepEmail = document.getElementById('step-email');
+			const stepOtp = document.getElementById('step-otp');
+			const emailError = document.getElementById('email-error');
+			const otpError = document.getElementById('otp-error');
+			const otpInputs = document.querySelectorAll('.otp-input') as NodeListOf<HTMLInputElement>;
+			const resendOtpBtn = document.getElementById('resend-otp-btn') as HTMLButtonElement;
+
+			let countdownInterval: any = null;
+
+			function startCountdown() {
+				let timeLeft = 30;
+				resendOtpBtn.disabled = true;
+				resendOtpBtn.innerText = `Resend OTP (${timeLeft}s)`;
+				
+				if (countdownInterval) clearInterval(countdownInterval);
+				
+				countdownInterval = setInterval(() => {
+					timeLeft--;
+					if (timeLeft <= 0) {
+						clearInterval(countdownInterval);
+						resendOtpBtn.disabled = false;
+						resendOtpBtn.innerText = 'Resend OTP';
+					} else {
+						resendOtpBtn.innerText = `Resend OTP (${timeLeft}s)`;
+					}
+				}, 1000);
+			}
+
+			async function sendOtp(btn: HTMLButtonElement, errorEl: HTMLElement) {
+				const ogText = btn.innerText;
+				btn.innerText = 'Sending...';
+				btn.disabled = true;
+				errorEl.style.display = 'none';
+
+				try {
+					const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement).content;
+					const res = await fetch('/api/auth/request-otp', {
+						method: 'POST',
+						headers: { 
+							'Content-Type': 'application/json',
+							'X-CSRF-Token': csrfToken
+						},
+						body: JSON.stringify({})
+					});
+
+					const data = await res.json();
+					if (res.ok) {
+						stepEmail!.style.display = 'none';
+						stepOtp!.style.display = 'block';
+						// Only focus if we are transitioning from step 1
+						if (btn.id === 'send-otp-btn') {
+							otpInputs[0].focus();
+						}
+						startCountdown();
+					} else {
+						errorEl.innerText = data.error || 'Failed to send OTP';
+						errorEl.style.display = 'block';
+						btn.innerText = ogText;
+						btn.disabled = false;
+					}
+				} catch (err) {
+					errorEl.innerText = 'Network error. Please try again.';
+					errorEl.style.display = 'block';
+					btn.innerText = ogText;
+					btn.disabled = false;
+				}
+			}
+
+			// Handle Email Submission
+			emailForm?.addEventListener('submit', async (e) => {
+				e.preventDefault();
+				const btn = emailForm.querySelector('button') as HTMLButtonElement;
+				await sendOtp(btn, emailError!);
+			});
+
+			resendOtpBtn?.addEventListener('click', async () => {
+				await sendOtp(resendOtpBtn, otpError!);
+			});
+
+			// Handle OTP Auto-advance
+			otpInputs.forEach((input, index) => {
+				input.addEventListener('input', (e) => {
+					if (input.value.length === 1 && index < otpInputs.length - 1) {
+						otpInputs[index + 1].focus();
+					}
+				});
+
+				input.addEventListener('keydown', (e) => {
+					if (e.key === 'Backspace' && !input.value && index > 0) {
+						otpInputs[index - 1].focus();
+					}
+				});
+			});
+
+			// Handle OTP Submission
+			otpForm?.addEventListener('submit', async (e) => {
+				e.preventDefault();
+				const otp = Array.from(otpInputs).map(i => i.value).join('');
+				
+				otpError!.style.display = 'none';
+				const btn = otpForm.querySelector('button');
+				const ogText = btn!.innerText;
+				btn!.innerText = 'Verifying...';
+				btn!.disabled = true;
+
+				try {
+					const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement).content;
+					const res = await fetch('/api/auth/verify-otp', {
+						method: 'POST',
+						headers: { 
+							'Content-Type': 'application/json',
+							'X-CSRF-Token': csrfToken
+						},
+						body: JSON.stringify({ otp })
+					});
+
+					const data = await res.json();
+					if (res.ok) {
+						window.location.href = '/admin';
+					} else {
+						otpError!.innerText = data.error || 'Invalid OTP';
+						otpError!.style.display = 'block';
+					}
+				} catch (err) {
+					otpError!.innerText = 'Network error. Please try again.';
+					otpError!.style.display = 'block';
+				} finally {
+					btn!.innerText = ogText;
+					btn!.disabled = false;
+				}
+			});
+		</script>
+	</body>
+</html>
+

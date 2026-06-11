@@ -1,0 +1,70 @@
+---
+// src/components/BackButton.astro
+export interface Props {
+  href?: string;
+  label?: string;
+  className?: string;
+}
+
+const { 
+  href = "javascript:history.back()", 
+  label = "Go Back",
+  className = ""
+} = Astro.props;
+
+// If href is history.back(), it relies on client side JS. 
+// Otherwise it's a standard link. We'll make it default to '/' as discussed, 
+// but allow overriding.
+const resolvedHref = Astro.props.href ? Astro.props.href : "/";
+---
+
+<a href={resolvedHref} class={`back-button ${className}`} aria-label={label}>
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="back-icon">
+    <line x1="19" y1="12" x2="5" y2="12"></line>
+    <polyline points="12 19 5 12 12 5"></polyline>
+  </svg>
+  <span class="back-label">{label}</span>
+</a>
+
+<style>
+  .back-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: var(--glass-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    color: var(--text-main);
+    text-decoration: none;
+    font-weight: 500;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-bottom: 1.5rem;
+    cursor: pointer;
+  }
+
+  .back-button:hover {
+    background: var(--glass-bg-hover);
+    transform: translateX(-4px);
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  }
+
+  .back-icon {
+    width: 20px;
+    height: 20px;
+    transition: transform 0.3s ease;
+  }
+
+  .back-button:hover .back-icon {
+    transform: translateX(-4px);
+  }
+
+  .back-label {
+    font-size: 0.95rem;
+  }
+</style>
+

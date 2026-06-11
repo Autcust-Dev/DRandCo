@@ -1,0 +1,191 @@
+---
+import { verifyAdminSession } from '../../lib/auth';
+import SEO from '../../components/SEO.astro';
+import '../../styles/global.css';
+import { db } from '../../lib/firebase';
+
+const isAuthenticated = await verifyAdminSession(Astro.request, Astro.cookies);
+
+if (!isAuthenticated) {
+  Astro.cookies.delete('admin_session', { path: '/' });
+  return Astro.redirect('/admin/login');
+}
+
+let apps: any[] = [];
+try {
+	const snapshot = await db.collection('apps').get();
+	apps = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+} catch (e) {
+	console.error('Error fetching apps:', e);
+}
+---
+
+<html lang="en">
+	<head>
+		<SEO title="Manage Apps | DineshReddy&Co" description="Admin Dashboard" noindex={true} />
+	</head>
+	<body>
+		<main class="container admin-layout">
+			<aside class="glass-panel" style="padding: 1.5rem;">
+				<h2 style="font-size: 1.5rem; margin-bottom: 2rem;">Admin Panel</h2>
+				<nav class="admin-sidebar">
+					<a href="/admin" class="admin-nav-link">Dashboard</a>
+					<a href="/admin/apps" class="admin-nav-link active">Manage Apps</a>
+					<a href="/admin/policies" class="admin-nav-link">Manage Policies</a>
+					<a href="/admin/docs" class="admin-nav-link">Manage Docs</a>
+					<a href="/admin/settings" class="admin-nav-link">Settings</a>
+				</nav>
+				
+				<div style="margin-top: auto; padding-top: 2rem;">
+					<form action="/api/auth/logout" method="POST">
+						<button type="submit" class="admin-nav-link" style="width: 100%; text-align: left; background: none; border: none; cursor: pointer; color: #ffffff;">Logout</button>
+					</form>
+				</div>
+			</aside>
+			
+			<div class="content">
+				<div class="glass-panel mb-4" style="display: flex; justify-content: space-between; align-items: center;">
+					<div>
+						<h1 style="font-size: 2rem; margin-bottom: 0;">Manage Apps</h1>
+						<p style="margin-bottom: 0;">Add, edit, or delete app info pages.</p>
+					</div>
+					<button class="btn" onclick="openEditor()">+ Add New App</button>
+				</div>
+
+				<!-- Apps List -->
+				<div id="apps-list" class="glass-panel">
+					{apps.length === 0 ? (
+						<p>No apps found.</p>
+					) : (
+						<ul style="list-style: none; padding: 0; margin: 0;">
+							{apps.map(app => (
+								<li style="padding: 1rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+									<div>
+										<h3 style="margin: 0; font-size: 1.2rem;">{app.name}</h3>
+										<p style="margin: 0; font-size: 0.9rem; color: var(--text-muted);">Slug: {app.slug}</p>
+									</div>
+									<div style="display: flex; gap: 0.5rem;">
+										<button class="btn btn-secondary text-sm" onclick={`editApp('${app.slug}', '${app.name.replace(/'/g, "\\'")}', \`${app.content.replace(/`/g, '\\`')}\`)`}>Edit</button>
+										<button class="btn btn-secondary text-sm" style="color: #e53e3e; border-color: rgba(229, 62, 62, 0.3);" onclick={`deleteApp('${app.slug}')`}>Delete</button>
+									</div>
+								</li>
+							))}
+						</ul>
+					)}
+				</div>
+
+				<!-- Editor Form (Hidden by default) -->
+				<div id="app-editor" class="glass-panel" style="display: none; text-align: left;">
+					<h2 id="editor-title" style="font-size: 1.5rem; margin-bottom: 1rem;">Add New App</h2>
+					<form id="app-form">
+						<div class="form-group mb-2">
+							<label class="form-label" for="slug">URL Slug</label>
+							<input type="text" id="slug" class="form-input" placeholder="e.g. milemint" required />
+						</div>
+						<div class="form-group mb-2">
+							<label class="form-label" for="name">App Name</label>
+							<input type="text" id="name" class="form-input" placeholder="e.g. MileMint" required />
+						</div>
+						<div class="form-group mb-4">
+							<label class="form-label" for="content">HTML Content</label>
+							<textarea id="content" class="form-input" rows="15" placeholder="Write app info content here in HTML format..." required style="font-family: monospace;"></textarea>
+						</div>
+						<div style="display: flex; gap: 1rem;">
+							<button type="submit" class="btn">Save App</button>
+							<button type="button" class="btn btn-secondary" onclick="closeEditor()">Cancel</button>
+						</div>
+						<div id="editor-msg" class="text-sm mt-2" style="display: none;"></div>
+					</form>
+				</div>
+			</div>
+		</main>
+
+		<script is:inline>
+			function openEditor() {
+				document.getElementById('apps-list').style.display = 'none';
+				document.getElementById('app-editor').style.display = 'block';
+				document.getElementById('editor-title').innerText = 'Add New App';
+				document.getElementById('slug').value = '';
+				document.getElementById('name').value = '';
+				document.getElementById('content').value = '';
+				document.getElementById('slug').readOnly = false;
+				document.getElementById('editor-msg').style.display = 'none';
+			}
+
+			function editApp(slug, name, content) {
+				document.getElementById('apps-list').style.display = 'none';
+				document.getElementById('app-editor').style.display = 'block';
+				document.getElementById('editor-title').innerText = 'Edit App';
+				document.getElementById('slug').value = slug;
+				document.getElementById('name').value = name;
+				document.getElementById('content').value = content;
+				document.getElementById('slug').readOnly = true;
+				document.getElementById('editor-msg').style.display = 'none';
+			}
+
+			function closeEditor() {
+				document.getElementById('app-editor').style.display = 'none';
+				document.getElementById('apps-list').style.display = 'block';
+			}
+
+			async function deleteApp(slug) {
+				if (!confirm(`Are you sure you want to delete the app "${slug}"?`)) return;
+				
+				try {
+					const res = await fetch('/api/admin/delete-app', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ slug })
+					});
+
+					if (res.ok) {
+						window.location.reload();
+					} else {
+						alert('Failed to delete app.');
+					}
+				} catch (err) {
+					alert('Network error.');
+				}
+			}
+
+			const appForm = document.getElementById('app-form');
+			const editorMsg = document.getElementById('editor-msg');
+
+			appForm?.addEventListener('submit', async (e) => {
+				e.preventDefault();
+				const slug = document.getElementById('slug').value;
+				const name = document.getElementById('name').value;
+				const content = document.getElementById('content').value;
+				
+				const btn = appForm.querySelector('button[type="submit"]');
+				const ogText = btn.innerText;
+				btn.innerText = 'Saving...';
+				btn.disabled = true;
+
+				try {
+					const res = await fetch('/api/admin/update-app', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ slug, name, content })
+					});
+
+					if (res.ok) {
+						window.location.reload();
+					} else {
+						editorMsg.innerText = 'Failed to save app.';
+						editorMsg.style.color = '#e53e3e';
+						editorMsg.style.display = 'block';
+					}
+				} catch (err) {
+					editorMsg.innerText = 'Network error.';
+					editorMsg.style.color = '#e53e3e';
+					editorMsg.style.display = 'block';
+				} finally {
+					btn.innerText = ogText;
+					btn.disabled = false;
+				}
+			});
+		</script>
+	</body>
+</html>
+

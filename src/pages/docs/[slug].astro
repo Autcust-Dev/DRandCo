@@ -1,0 +1,59 @@
+---
+import SEO from '../../components/SEO.astro';
+import '../../styles/global.css';
+import { db } from '../../lib/firebase';
+import BackButton from '../../components/BackButton.astro';
+
+const { slug } = Astro.params;
+if (!slug) {
+	return Astro.redirect('/404');
+}
+
+let docData = null;
+try {
+	const doc = await db.collection('docs').doc(slug).get();
+	if (doc.exists) {
+		docData = doc.data();
+	}
+} catch (e) {
+	console.error('Error fetching doc info:', e);
+}
+
+if (!docData) {
+	// Fallback check: Did the user accidentally link to a policy or app using a relative link?
+	try {
+		const policyDoc = await db.collection('policies').doc(slug).get();
+		if (policyDoc.exists) return Astro.redirect(`/policies/${slug}`);
+		
+		const appDoc = await db.collection('apps').doc(slug).get();
+		if (appDoc.exists) return Astro.redirect(`/apps/${slug}`);
+	} catch (e) {
+		console.error('Error in fallback check:', e);
+	}
+
+	return Astro.redirect('/404');
+}
+
+const htmlContent = docData.content;
+---
+
+<html lang="en">
+	<head>
+		<SEO 
+			title={`${docData.title} | DineshReddy&Co`}
+			description={`Information about ${docData.title}.`}
+			type="article"
+		/>
+
+		<!-- Analytics -->
+		<script defer src="/_vercel/insights/script.js"></script>
+	</head>
+	<body>
+		<main style="padding: 20px;">
+            <div style="max-width: 860px; margin: 0 auto 10px;">
+			    <BackButton />
+            </div>
+			<div class="markdown-content" set:html={htmlContent}></div>
+		</main>
+	</body>
+</html>

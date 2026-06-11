@@ -1,0 +1,187 @@
+---
+import SEO from '../components/SEO.astro';
+import '../styles/global.css';
+import { db } from '../lib/firebase';
+import AppLink from '../components/AppLink.astro';
+
+let homeHtml = `<h1 style="font-size: 3.5rem; margin-bottom: 1.5rem;">DineshReddy&Co</h1>
+<p style="color: var(--text-muted); font-size: 1.25rem; margin-bottom: 2rem; max-width: 700px; margin-left: auto; margin-right: auto;">Managing apps like MileMint and TorrentX with a secure, maintenance-free infrastructure.</p>`;
+let policies: any[] = [];
+
+let apps: any[] = [];
+let docs: any[] = [];
+
+try {
+	const homeDoc = await db.collection('site_content').doc('home').get();
+	if (homeDoc.exists) {
+		const data = homeDoc.data();
+		if (data?.homeHtml) {
+			homeHtml = data.homeHtml;
+		} else if (data?.headline && data?.description) {
+			homeHtml = `<h1 style="font-size: 3.5rem; margin-bottom: 1.5rem;">${data.headline}</h1>\n<p style="color: var(--text-muted); font-size: 1.25rem; margin-bottom: 2rem; max-width: 700px; margin-left: auto; margin-right: auto;">${data.description}</p>`;
+		}
+	}
+
+	const appsSnapshot = await db.collection('apps').get();
+	apps = appsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+	const docsSnapshot = await db.collection('docs').get();
+	docs = docsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+	const policiesSnapshot = await db.collection('policies').get();
+	policies = policiesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+} catch (e) {
+	console.error('Error fetching data from Firestore:', e);
+}
+---
+
+<html lang="en">
+	<head>
+		<SEO 
+			title="DineshReddy&Co"
+			description="DineshReddy&Co Portfolio and Policies"
+		/>
+
+		<!-- Analytics -->
+		<script defer src="/_vercel/insights/script.js"></script>
+		<style>
+			.hamburger-menu {
+				position: fixed;
+				top: 20px;
+				left: 20px;
+				z-index: 1000;
+			}
+
+			#menu-toggle {
+				display: none;
+			}
+
+			.menu-icon {
+				cursor: pointer;
+				display: flex;
+				color: var(--text-main);
+				padding: 12px;
+				background: var(--glass-bg);
+				border: 1px solid var(--border-color);
+				border-radius: 8px;
+				transition: all 0.3s ease;
+				backdrop-filter: blur(10px);
+				-webkit-backdrop-filter: blur(10px);
+			}
+
+			.menu-icon:hover {
+				background: var(--glass-bg-hover);
+			}
+
+			.menu-content {
+				position: absolute;
+				top: 60px;
+				left: 0;
+				background: rgba(0, 0, 0, 0.85);
+				backdrop-filter: blur(20px);
+				-webkit-backdrop-filter: blur(20px);
+				border: 1px solid var(--border-color);
+				border-radius: 12px;
+				padding: 1.25rem;
+				min-width: 280px;
+				opacity: 0;
+				visibility: hidden;
+				transform: translateY(-10px);
+				transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+				box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+			}
+
+			#menu-toggle:checked ~ .menu-content {
+				opacity: 1;
+				visibility: visible;
+				transform: translateY(0);
+			}
+
+			.menu-label {
+				display: block;
+				font-size: 0.75rem;
+				text-transform: uppercase;
+				letter-spacing: 1px;
+				color: var(--text-muted);
+				margin-bottom: 0.75rem;
+				padding: 0 0.5rem;
+				font-weight: bold;
+			}
+
+			.menu-link {
+				display: block;
+				color: var(--text-main);
+				text-decoration: none;
+				padding: 0.75rem 1rem;
+				border-radius: 8px;
+				transition: all 0.3s ease;
+				font-size: 0.95rem;
+				margin-bottom: 0.25rem;
+			}
+
+			.menu-link:hover {
+				background: rgba(255, 255, 255, 0.1);
+				transform: translateX(4px);
+			}
+			
+			.divider-small {
+				height: 1px;
+				background: var(--border-color);
+				margin: 1rem 0;
+			}
+		</style>
+	</head>
+	<body style="margin: 0; position: relative; padding: 2rem 1rem; min-height: 100vh; display: flex; flex-direction: column;">
+		<nav class="hamburger-menu">
+			<input type="checkbox" id="menu-toggle" />
+			<label for="menu-toggle" class="menu-icon">
+				<svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+					<line x1="3" y1="12" x2="21" y2="12"></line>
+					<line x1="3" y1="6" x2="21" y2="6"></line>
+					<line x1="3" y1="18" x2="21" y2="18"></line>
+				</svg>
+			</label>
+			
+			<div class="menu-content">
+				<div class="menu-label">Navigation</div>
+				<a href="/" class="menu-link">Home</a>
+				
+				<div class="divider-small"></div>
+				
+				<div class="menu-label">Our Apps</div>
+				{apps.map(app => (
+					<a href={`/apps/${app.slug}`} class="menu-link">{app.name}</a>
+				))}
+
+				<div class="divider-small"></div>
+				
+				<div class="menu-label">TorrentX</div>
+				<a href="/torrentx-web" class="menu-link">TorrentX Web-Client</a>
+
+				<div class="divider-small"></div>
+				
+				<div class="menu-label">Documentation</div>
+				{docs.map(doc => (
+					<a href={`/docs/${doc.slug}`} class="menu-link">{doc.title}</a>
+				))}
+				
+				{policies.length > 0 && (
+					<>
+						<div class="divider-small"></div>
+						<div class="menu-label">Company Policies</div>
+						{policies.map(policy => (
+							<a href={`/policies/${policy.slug}`} class="menu-link">{policy.title}</a>
+						))}
+					</>
+				)}
+			</div>
+		</nav>
+
+		<main class="container text-center" style="max-width: 1000px; padding: 2rem; margin: auto;">
+			<div style="padding: 4rem 1rem; margin-bottom: 2rem;" set:html={homeHtml}></div>
+
+		</main>
+
+	</body>
+</html>
+
