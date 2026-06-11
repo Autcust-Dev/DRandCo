@@ -46,9 +46,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       await transporter.sendMail({
         from: `"Admin Dashboard" <${import.meta.env.SMTP_USER}>`,
         to: adminEmail,
-        subject: 'Your Admin Dashboard OTP',
-        text: `Your one-time password is: ${otp}. It will expire in 5 minutes.`,
-        html: `<p>Your one-time password is: <strong>${otp}</strong></p><p>It will expire in 5 minutes.</p>`,
+        subject: 'Admin Panel OTP',
+        text: `Hey DineshReddy&Co your otp for admin panel is ${otp} -by Autcust`,
+        html: `<p>Hey DineshReddy&Co your otp for admin panel is <strong>${otp}</strong> -by Autcust</p>`,
       });
     } else {
       // Fallback for development/testing if SMTP is not configured
