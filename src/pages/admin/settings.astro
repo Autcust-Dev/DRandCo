@@ -106,7 +106,7 @@ try {
 				}
 
 				try {
-					const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement).content;
+					const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
 					const res = await fetch('/api/admin/update-settings', {
 						method: 'POST',

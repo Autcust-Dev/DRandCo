@@ -100,7 +100,7 @@ Astro.cookies.set('csrf_token', csrfToken, {
 				errorEl.style.display = 'none';
 
 				try {
-					const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement).content;
+					const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 					const res = await fetch('/api/auth/request-otp', {
 						method: 'POST',
 						headers: { 
@@ -171,7 +171,7 @@ Astro.cookies.set('csrf_token', csrfToken, {
 				btn!.disabled = true;
 
 				try {
-					const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement).content;
+					const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 					const res = await fetch('/api/auth/verify-otp', {
 						method: 'POST',
 						headers: { 
