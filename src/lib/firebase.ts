@@ -4,20 +4,15 @@ import { getFirestore } from 'firebase-admin/firestore';
 const projectId = import.meta.env.FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || import.meta.env.PUBLIC_FIREBASE_PROJECT_ID;
 let rawPrivateKey = import.meta.env.FIREBASE_PRIVATE_KEY || process.env.FIREBASE_PRIVATE_KEY || '';
 
-// Try parsing as JSON string if it's quoted
-if (rawPrivateKey.startsWith('"') && rawPrivateKey.endsWith('"')) {
-  try {
-    rawPrivateKey = JSON.parse(rawPrivateKey);
-  } catch (e) {
-    rawPrivateKey = rawPrivateKey.slice(1, -1);
-  }
-}
-
-// Replace literal '\n' strings with actual newlines
+// Replace literal '\n' strings with actual newlines if they exist
 let privateKey = rawPrivateKey.replace(/\\n/g, '\n').replace(/\\r/g, '\r');
 
-// Fix common Vercel pasting issue where newlines become spaces
-if (!privateKey.includes('\n')) {
+// Extract exactly the PEM block, ignoring any leading/trailing garbage like spaces, quotes, or commas
+const pemMatch = privateKey.match(/(-----BEGIN PRIVATE KEY-----\s*[\s\S]+?\s*-----END PRIVATE KEY-----)/);
+if (pemMatch) {
+  privateKey = pemMatch[1];
+} else if (!privateKey.includes('\n')) {
+  // Fix common Vercel pasting issue where newlines become spaces
   const match = privateKey.match(/-----BEGIN PRIVATE KEY-----\s*(.*?)\s*-----END PRIVATE KEY-----/);
   if (match) {
     privateKey = `-----BEGIN PRIVATE KEY-----\n${match[1].replace(/\s+/g, '')}\n-----END PRIVATE KEY-----\n`;
