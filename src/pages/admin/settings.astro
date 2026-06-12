@@ -6,6 +6,18 @@ import { db } from '../../lib/firebase';
 
 const isAuthenticated = await verifyAdminSession(Astro.request, Astro.cookies);
 
+// Ensure CSRF token exists
+let csrfToken = Astro.cookies.get('csrf_token')?.value;
+if (!csrfToken) {
+  csrfToken = crypto.randomUUID();
+  Astro.cookies.set('csrf_token', csrfToken, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'strict',
+    path: '/'
+  });
+}
+
 if (!isAuthenticated) {
   Astro.cookies.delete('admin_session', { path: '/' });
   return Astro.redirect('/admin/login');
@@ -29,6 +41,7 @@ try {
 <html lang="en">
 	<head>
 		<SEO title="Settings | DineshReddy&Co" description="Admin Dashboard Settings" noindex={true} />
+		<meta name="csrf-token" content={csrfToken} />
 	</head>
 	<body>
 		<main class="container admin-layout">
@@ -91,9 +104,14 @@ try {
 				}
 
 				try {
+					const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement).content;
+
 					const res = await fetch('/api/admin/update-settings', {
 						method: 'POST',
-						headers: { 'Content-Type': 'application/json' },
+						headers: { 
+							'Content-Type': 'application/json',
+							'X-CSRF-Token': csrfToken
+						},
 						body: JSON.stringify({ siteTitle, siteDescription })
 					});
 
