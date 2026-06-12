@@ -1,16 +1,15 @@
 @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&display=swap');
 
 :root {
-  --bg-dark: #000000;
+  --bg-dark: #ffffff;
   --bg-gradient: none;
-  --text-main: #ffffff;
-  --text-muted: rgba(255, 255, 255, 0.7);
-  --accent-primary: #f4f0e6;
-  /* Paper beige */
-  --accent-secondary: #ffffff;
-  --border-color: rgba(244, 240, 230, 0.2);
-  --glass-bg: rgba(255, 255, 255, 0.05);
-  --glass-bg-hover: rgba(255, 255, 255, 0.1);
+  --text-main: #1F5882;
+  --text-muted: rgba(31, 88, 130, 0.7);
+  --accent-primary: #1F5882;
+  --accent-secondary: #164366;
+  --border-color: rgba(31, 88, 130, 0.2);
+  --glass-bg: rgba(31, 88, 130, 0.05);
+  --glass-bg-hover: rgba(31, 88, 130, 0.1);
   --font-main: 'Lora', serif;
 }
 
@@ -48,10 +47,8 @@ h6 {
 
 h1 {
   font-size: 3.5rem;
-  background: linear-gradient(135deg, #ffffff 0%, var(--accent-primary) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-shadow: 0 4px 24px rgba(255, 255, 255, 0.1);
+  color: var(--accent-primary);
+  text-shadow: 0 4px 24px rgba(31, 88, 130, 0.1);
 }
 
 h2 {
@@ -129,23 +126,23 @@ a:hover {
   display: inline-block;
   padding: 0.875rem 2.5rem;
   background: var(--accent-primary);
-  color: #000000;
+  color: #ffffff;
   border-radius: 12px;
   font-weight: 600;
   letter-spacing: 0.5px;
-  box-shadow: 0 4px 15px rgba(244, 240, 230, 0.4);
+  box-shadow: 0 4px 15px rgba(31, 88, 130, 0.2);
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(31, 88, 130, 0.1);
   cursor: pointer;
   text-shadow: none;
 }
 
 .btn:hover {
   transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(244, 240, 230, 0.6);
-  color: #000000;
+  box-shadow: 0 8px 25px rgba(31, 88, 130, 0.3);
+  color: var(--accent-primary);
   background: #ffffff;
-  border-color: rgba(255, 255, 255, 0.3);
+  border-color: var(--accent-primary);
 }
 
 .btn-huge {
@@ -155,14 +152,14 @@ a:hover {
   gap: 16px;
   padding: 1.5rem 3rem;
   background: var(--accent-primary);
-  color: #000000;
+  color: #ffffff;
   border-radius: 20px;
   font-size: 1.35rem;
   font-weight: 700;
   letter-spacing: 0.5px;
-  box-shadow: 0 8px 25px rgba(244, 240, 230, 0.4);
+  box-shadow: 0 8px 25px rgba(31, 88, 130, 0.2);
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(31, 88, 130, 0.1);
   cursor: pointer;
   text-decoration: none;
   width: 100%;
@@ -172,8 +169,9 @@ a:hover {
 
 .btn-huge:hover {
   transform: translateY(-5px) scale(1.02);
-  box-shadow: 0 15px 35px rgba(244, 240, 230, 0.6);
+  box-shadow: 0 15px 35px rgba(31, 88, 130, 0.3);
   background: #ffffff;
+  color: var(--accent-primary);
 }
 
 .btn-huge svg {
@@ -265,7 +263,7 @@ a:hover {
   display: flex;
   align-items: center;
   padding: 1.25rem 1.75rem;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(31, 88, 130, 0.02);
   border: 1px solid var(--border-color);
   border-radius: 12px;
   color: var(--text-main);
@@ -274,10 +272,10 @@ a:hover {
 }
 
 .policy-list li a:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(31, 88, 130, 0.06);
   border-color: var(--accent-primary);
   transform: translateX(6px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 20px rgba(31, 88, 130, 0.1);
 }
 
 /* Divider */
@@ -358,7 +356,7 @@ a:hover {
 
 .admin-nav-link:hover,
 .admin-nav-link.active {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(31, 88, 130, 0.08);
   color: var(--text-main);
   transform: translateX(4px);
 }
@@ -399,19 +397,19 @@ a:hover {
   height: 68px;
   font-size: 2.25rem;
   text-align: center;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(31, 88, 130, 0.05);
   border: 1px solid var(--border-color);
   border-radius: 12px;
   color: var(--text-main);
   font-family: var(--font-main);
   transition: all 0.3s;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: inset 0 2px 4px rgba(31, 88, 130, 0.05);
 }
 
 .otp-input:focus {
   outline: none;
   border-color: var(--accent-primary);
-  box-shadow: 0 0 15px rgba(244, 240, 230, 0.3), inset 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 15px rgba(31, 88, 130, 0.2), inset 0 2px 4px rgba(31, 88, 130, 0.05);
   transform: translateY(-2px);
 }
 
@@ -431,7 +429,7 @@ a:hover {
 .form-input {
   width: 100%;
   padding: 0.875rem 1.25rem;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(31, 88, 130, 0.05);
   border: 1px solid var(--border-color);
   border-radius: 10px;
   color: var(--text-main);
@@ -443,11 +441,11 @@ a:hover {
 .form-input:focus {
   outline: none;
   border-color: var(--accent-primary);
-  box-shadow: 0 0 10px rgba(244, 240, 230, 0.2);
+  box-shadow: 0 0 10px rgba(31, 88, 130, 0.15);
 }
 
 .error-msg {
-  color: #ffffff;
+  color: #e53e3e;
   font-size: 0.95rem;
   margin-top: 0.75rem;
   display: none;
