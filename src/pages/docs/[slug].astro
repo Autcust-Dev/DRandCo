@@ -2,6 +2,8 @@
 import SEO from '../../components/SEO.astro';
 import '../../styles/global.css';
 import { db } from '../../lib/firebase';
+
+Astro.response.headers.set('Cache-Control', 's-maxage=1, stale-while-revalidate=59');
 import BackButton from '../../components/BackButton.astro';
 
 const { slug } = Astro.params;

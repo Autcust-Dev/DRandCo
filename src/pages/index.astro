@@ -4,6 +4,9 @@ import '../styles/global.css';
 import { db } from '../lib/firebase';
 import AppLink from '../components/AppLink.astro';
 
+// Ensure Vercel doesn't infinitely cache this SSR page, but keeps it fast
+Astro.response.headers.set('Cache-Control', 's-maxage=1, stale-while-revalidate=59');
+
 let homeHtml = ``;
 let policies: any[] = [];
 

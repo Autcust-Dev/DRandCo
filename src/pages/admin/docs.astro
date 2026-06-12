@@ -152,7 +152,8 @@ try {
 							'Content-Type': 'application/json',
 							'X-CSRF-Token': csrfToken
 						},
-						body: JSON.stringify({ slug })
+						body: JSON.stringify(),
+						credentials: 'same-origin'
 					});
 
 					if (res.ok) {
@@ -187,7 +188,8 @@ try {
 							'Content-Type': 'application/json',
 							'X-CSRF-Token': csrfToken
 						},
-						body: JSON.stringify({ slug, title, content })
+						body: JSON.stringify(),
+						credentials: 'same-origin'
 					});
 
 					if (res.ok) {

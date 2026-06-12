@@ -3,6 +3,8 @@ import SEO from '../../components/SEO.astro';
 import '../../styles/global.css';
 import { db } from '../../lib/firebase';
 
+Astro.response.headers.set('Cache-Control', 's-maxage=1, stale-while-revalidate=59');
+
 const { slug } = Astro.params;
 if (!slug) {
 	return Astro.redirect('/404');

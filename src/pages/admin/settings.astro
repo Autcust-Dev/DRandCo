@@ -112,7 +112,8 @@ try {
 							'Content-Type': 'application/json',
 							'X-CSRF-Token': csrfToken
 						},
-						body: JSON.stringify({ siteTitle, siteDescription })
+						body: JSON.stringify(),
+						credentials: 'same-origin'
 					});
 
 					if (res.ok) {
