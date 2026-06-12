@@ -1,0 +1,283 @@
+---
+Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+
+import { verifyAdminSession } from '../../lib/auth';
+import SEO from '../../components/SEO.astro';
+import '../../styles/global.css';
+import { db } from '../../lib/firebase';
+
+const isAuthenticated = await verifyAdminSession(Astro.request, Astro.cookies);
+
+// Ensure CSRF token exists
+let csrfToken = Astro.cookies.get('csrf_token')?.value;
+if (!csrfToken) {
+  csrfToken = crypto.randomUUID();
+  Astro.cookies.set('csrf_token', csrfToken, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'strict',
+    path: '/'
+  });
+}
+
+if (!isAuthenticated) {
+  Astro.cookies.delete('admin_session', { path: '/' });
+  return Astro.redirect('/admin/login');
+}
+
+let menus: any[] = [];
+try {
+	const snapshot = await db.collection('menus').orderBy('order', 'asc').get();
+	menus = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+} catch (e) {
+	// If the index doesn't exist yet, we can fallback to no order or catch it here
+	try {
+		const snapshot = await db.collection('menus').get();
+		menus = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+		menus.sort((a, b) => (a.order || 0) - (b.order || 0));
+	} catch(err) {
+		console.error('Error fetching menus:', err);
+	}
+}
+---
+
+<html lang="en">
+	<head>
+		<SEO title="Manage Menus | DineshReddy&Co" description="Admin Dashboard" noindex={true} />
+		<meta name="csrf-token" content={csrfToken} />
+		<style>
+			.subroute-item {
+				display: flex;
+				gap: 0.5rem;
+				margin-bottom: 0.5rem;
+				align-items: center;
+			}
+			.subroute-item input {
+				flex: 1;
+			}
+			.remove-btn {
+				background: none;
+				border: none;
+				color: #e53e3e;
+				cursor: pointer;
+				font-size: 1.2rem;
+				padding: 0 0.5rem;
+			}
+		</style>
+	</head>
+	<body>
+		<main class="container admin-layout">
+			<aside class="glass-panel" style="padding: 1.5rem;">
+				<h2 style="font-size: 1.5rem; margin-bottom: 2rem;">Admin Panel</h2>
+				<nav class="admin-sidebar">
+					<a href="/admin" class="admin-nav-link">Dashboard</a>
+
+					<a href="/admin/policies" class="admin-nav-link">Manage Policies</a>
+					<a href="/admin/menus" class="admin-nav-link active">Manage Menus</a>
+					<a href="/admin/settings" class="admin-nav-link">Settings</a>
+				</nav>
+				
+				<div style="margin-top: auto; padding-top: 2rem;">
+					<form action="/api/auth/logout" method="POST">
+						<button type="submit" class="admin-nav-link" style="width: 100%; text-align: left; background: none; border: none; cursor: pointer; color: #ffffff;">Logout</button>
+					</form>
+				</div>
+			</aside>
+			
+			<div class="content">
+				<div class="glass-panel mb-4" style="display: flex; justify-content: space-between; align-items: center;">
+					<div>
+						<h1 style="font-size: 2rem; margin-bottom: 0;">Manage Menus</h1>
+						<p style="margin-bottom: 0;">Add, edit, or delete dynamic menu components and their subroutes.</p>
+					</div>
+					<button class="btn" onclick="openEditor()">+ Add New Menu</button>
+				</div>
+
+				<!-- Menus List -->
+				<div id="menus-list" class="glass-panel">
+					{menus.length === 0 ? (
+						<p>No menus found.</p>
+					) : (
+						<ul style="list-style: none; padding: 0; margin: 0;">
+							{menus.map(menu => (
+								<li style="padding: 1rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+									<div>
+										<h3 style="margin: 0; font-size: 1.2rem;">{menu.title}</h3>
+										<p style="margin: 0; font-size: 0.9rem; color: var(--text-muted);">Order: {menu.order || 0} | Subroutes: {menu.items ? menu.items.length : 0}</p>
+									</div>
+									<div style="display: flex; gap: 0.5rem;">
+										<button class="btn btn-secondary text-sm" onclick={`editMenu('${menu.id}', '${menu.title.replace(/'/g, "\\'")}', ${menu.order || 0}, ${JSON.stringify(menu.items || []).replace(/'/g, "\\'")})`}>Edit</button>
+										<button class="btn btn-secondary text-sm" style="color: #e53e3e; border-color: rgba(229, 62, 62, 0.3);" onclick={`deleteMenu('${menu.id}')`}>Delete</button>
+									</div>
+								</li>
+							))}
+						</ul>
+					)}
+				</div>
+
+				<!-- Editor Form (Hidden by default) -->
+				<div id="menu-editor" class="glass-panel" style="display: none; text-align: left;">
+					<h2 id="editor-title" style="font-size: 1.5rem; margin-bottom: 1rem;">Add New Menu</h2>
+					<form id="menu-form">
+						<div class="form-group mb-2">
+							<label class="form-label" for="menu-id">Menu ID (Slug)</label>
+							<input type="text" id="menu-id" class="form-input" placeholder="e.g. overview" required />
+						</div>
+						<div class="form-group mb-2">
+							<label class="form-label" for="title">Title (Displayed on Navigation)</label>
+							<input type="text" id="title" class="form-input" placeholder="e.g. OVERVIEW" required />
+						</div>
+						<div class="form-group mb-2">
+							<label class="form-label" for="order">Display Order (0, 1, 2...)</label>
+							<input type="number" id="order" class="form-input" value="0" required />
+						</div>
+						
+						<div class="form-group mb-4">
+							<label class="form-label">Subroutes</label>
+							<div id="subroutes-container"></div>
+							<button type="button" class="btn btn-secondary mt-2 text-sm" onclick="addSubroute()">+ Add Subroute</button>
+						</div>
+
+						<div style="display: flex; gap: 1rem;">
+							<button type="submit" class="btn">Save Menu</button>
+							<button type="button" class="btn btn-secondary" onclick="closeEditor()">Cancel</button>
+						</div>
+						<div id="editor-msg" class="text-sm mt-2" style="display: none;"></div>
+					</form>
+				</div>
+			</div>
+		</main>
+
+		<script is:inline>
+			let currentSubroutes = [];
+
+			function renderSubroutes() {
+				const container = document.getElementById('subroutes-container');
+				container.innerHTML = '';
+				currentSubroutes.forEach((subroute, index) => {
+					const div = document.createElement('div');
+					div.className = 'subroute-item';
+					div.innerHTML = `
+						<input type="text" class="form-input" placeholder="Label (e.g. About Us)" value="${subroute.label}" onchange="updateSubroute(${index}, 'label', this.value)" required />
+						<input type="text" class="form-input" placeholder="URL (e.g. /about)" value="${subroute.url}" onchange="updateSubroute(${index}, 'url', this.value)" required />
+						<button type="button" class="remove-btn" onclick="removeSubroute(${index})">×</button>
+					`;
+					container.appendChild(div);
+				});
+			}
+
+			function addSubroute() {
+				currentSubroutes.push({ label: '', url: '' });
+				renderSubroutes();
+			}
+
+			function updateSubroute(index, field, value) {
+				currentSubroutes[index][field] = value;
+			}
+
+			function removeSubroute(index) {
+				currentSubroutes.splice(index, 1);
+				renderSubroutes();
+			}
+
+			function openEditor() {
+				document.getElementById('menus-list').style.display = 'none';
+				document.getElementById('menu-editor').style.display = 'block';
+				document.getElementById('editor-title').innerText = 'Add New Menu';
+				document.getElementById('menu-id').value = '';
+				document.getElementById('title').value = '';
+				document.getElementById('order').value = '0';
+				document.getElementById('menu-id').readOnly = false;
+				currentSubroutes = [];
+				renderSubroutes();
+				document.getElementById('editor-msg').style.display = 'none';
+			}
+
+			function editMenu(id, title, order, items) {
+				document.getElementById('menus-list').style.display = 'none';
+				document.getElementById('menu-editor').style.display = 'block';
+				document.getElementById('editor-title').innerText = 'Edit Menu';
+				document.getElementById('menu-id').value = id;
+				document.getElementById('title').value = title;
+				document.getElementById('order').value = order;
+				document.getElementById('menu-id').readOnly = true;
+				currentSubroutes = items || [];
+				renderSubroutes();
+				document.getElementById('editor-msg').style.display = 'none';
+			}
+
+			function closeEditor() {
+				document.getElementById('menu-editor').style.display = 'none';
+				document.getElementById('menus-list').style.display = 'block';
+			}
+
+			async function deleteMenu(id) {
+				if (!confirm(`Are you sure you want to delete the menu "${id}"?`)) return;
+				
+				try {
+					const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+					const res = await fetch('/api/admin/delete-menu', {
+						method: 'POST',
+						headers: { 
+							'Content-Type': 'application/json',
+							'X-CSRF-Token': csrfToken
+						},
+						body: JSON.stringify({ id }),
+						credentials: 'same-origin'
+					});
+
+					if (res.ok) {
+						window.location.reload();
+					} else {
+						alert('Failed to delete menu.');
+					}
+				} catch (err) {
+					alert('Network error.');
+				}
+			}
+
+			const menuForm = document.getElementById('menu-form');
+			const editorMsg = document.getElementById('editor-msg');
+
+			menuForm?.addEventListener('submit', async (e) => {
+				e.preventDefault();
+				const id = document.getElementById('menu-id').value;
+				const title = document.getElementById('title').value;
+				const order = parseInt(document.getElementById('order').value, 10);
+				
+				const btn = menuForm.querySelector('button[type="submit"]');
+				const ogText = btn.innerText;
+				btn.innerText = 'Saving...';
+				btn.disabled = true;
+
+				try {
+					const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+					const res = await fetch('/api/admin/update-menu', {
+						method: 'POST',
+						headers: { 
+							'Content-Type': 'application/json',
+							'X-CSRF-Token': csrfToken
+						},
+						body: JSON.stringify({ id, title, order, items: currentSubroutes }),
+						credentials: 'same-origin'
+					});
+
+					if (res.ok) {
+						window.location.reload();
+					} else {
+						editorMsg.innerText = 'Failed to save menu.';
+						editorMsg.style.color = '#e53e3e';
+						editorMsg.style.display = 'block';
+					}
+				} catch (err) {
+					editorMsg.innerText = 'Network error.';
+					editorMsg.style.color = '#e53e3e';
+					editorMsg.style.display = 'block';
+				} finally {
+					btn.innerText = ogText;
+					btn.disabled = false;
+				}
+			});
+		</script>
+	</body>
+</html>

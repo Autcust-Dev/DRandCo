@@ -11,7 +11,7 @@ let homeHtml = ``;
 let policies: any[] = [];
 
 let apps: any[] = [];
-let docs: any[] = [];
+let menus: any[] = [];
 
 try {
 	const homeDoc = await db.collection('site_content').doc('home').get();
@@ -27,8 +27,14 @@ try {
 	const appsSnapshot = await db.collection('apps').get();
 	apps = appsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-	const docsSnapshot = await db.collection('docs').get();
-	docs = docsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+	try {
+		const menusSnapshot = await db.collection('menus').orderBy('order', 'asc').get();
+		menus = menusSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+	} catch (e) {
+		const menusSnapshot = await db.collection('menus').get();
+		menus = menusSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+		menus.sort((a, b) => (a.order || 0) - (b.order || 0));
+	}
 
 	const policiesSnapshot = await db.collection('policies').get();
 	policies = policiesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -47,128 +53,143 @@ try {
 		<!-- Analytics -->
 		<script defer src="/_vercel/insights/script.js"></script>
 		<style>
-			.hamburger-menu {
-				position: fixed;
-				top: 20px;
-				left: 20px;
+			/* Mega Menu Styles */
+			.mega-menu-nav {
+				background-color: #000080; /* Dark blue from screenshot */
+				width: 100%;
+				display: flex;
+				justify-content: center;
+				position: relative;
 				z-index: 1000;
 			}
-
-			#menu-toggle {
-				display: none;
-			}
-
-			.menu-icon {
-				cursor: pointer;
+			.mega-menu-list {
+				list-style: none;
+				margin: 0;
+				padding: 0;
 				display: flex;
-				color: var(--text-main);
-				padding: 12px;
-				background: var(--glass-bg);
-				border: 1px solid var(--border-color);
-				border-radius: 8px;
-				transition: all 0.3s ease;
-				backdrop-filter: blur(10px);
-				-webkit-backdrop-filter: blur(10px);
 			}
-
-			.menu-icon:hover {
-				background: var(--glass-bg-hover);
+			.mega-menu-item {
+				position: relative;
 			}
-
-			.menu-content {
+			.mega-menu-link {
+				display: block;
+				padding: 1rem 1.5rem;
+				color: #ffffff;
+				text-decoration: none;
+				font-weight: bold;
+				font-size: 0.9rem;
+				text-transform: uppercase;
+				transition: background-color 0.3s;
+				cursor: pointer;
+			}
+			.mega-menu-link:hover {
+				background-color: #000044;
+			}
+			.mega-menu-dropdown {
 				position: absolute;
-				top: 60px;
+				top: 100%;
 				left: 0;
-				background: rgba(255, 255, 255, 0.95);
-				backdrop-filter: blur(20px);
-				-webkit-backdrop-filter: blur(20px);
-				border: 1px solid var(--border-color);
-				border-radius: 12px;
-				padding: 1.25rem;
-				min-width: 280px;
+				background-color: #000080;
+				min-width: 250px;
 				opacity: 0;
 				visibility: hidden;
-				transform: translateY(-10px);
-				transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-				box-shadow: 0 8px 32px rgba(31, 88, 130, 0.15);
+				transform: translateY(10px);
+				transition: all 0.3s ease;
+				box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+				padding: 0.5rem 0;
 			}
-
-			#menu-toggle:checked ~ .menu-content {
+			.mega-menu-item:hover .mega-menu-dropdown {
 				opacity: 1;
 				visibility: visible;
 				transform: translateY(0);
 			}
-
-			.menu-label {
+			.mega-dropdown-link {
 				display: block;
-				font-size: 0.75rem;
-				text-transform: uppercase;
-				letter-spacing: 1px;
-				color: var(--text-muted);
-				margin-bottom: 0.75rem;
-				padding: 0 0.5rem;
+				padding: 0.75rem 1.5rem;
+				color: #ffffff;
+				text-decoration: none;
+				font-size: 0.9rem;
+				transition: background-color 0.2s;
+			}
+			.mega-dropdown-link:hover {
+				background-color: #000044;
+			}
+			.mega-dropdown-link::before {
+				content: '▸';
+				margin-right: 8px;
+				font-size: 0.8rem;
+			}
+			/* Mobile Menu Button */
+			.mobile-menu-btn {
+				display: none;
+				background: none;
+				border: none;
+				color: white;
+				font-size: 1.2rem;
+				padding: 1rem;
+				cursor: pointer;
 				font-weight: bold;
 			}
-
-			.menu-link {
-				display: block;
-				color: var(--text-main);
-				text-decoration: none;
-				padding: 0.75rem 1rem;
-				border-radius: 8px;
-				transition: all 0.3s ease;
-				font-size: 0.95rem;
-				margin-bottom: 0.25rem;
-			}
-
-			.menu-link:hover {
-				background: rgba(31, 88, 130, 0.08);
-				transform: translateX(4px);
-			}
-			
-			.divider-small {
-				height: 1px;
-				background: var(--border-color);
-				margin: 1rem 0;
+			@media (max-width: 768px) {
+				.mega-menu-list {
+					flex-direction: column;
+					display: none;
+					width: 100%;
+				}
+				.mega-menu-list.active {
+					display: flex;
+				}
+				.mobile-menu-btn {
+					display: block;
+				}
+				.mega-menu-nav {
+					flex-direction: column;
+				}
+				.mega-menu-dropdown {
+					position: static;
+					opacity: 1;
+					visibility: visible;
+					transform: none;
+					box-shadow: none;
+					background-color: #000044;
+					padding: 0;
+				}
+				.mega-menu-link {
+					border-bottom: 1px solid rgba(255,255,255,0.1);
+				}
 			}
 		</style>
 	</head>
-	<body style="margin: 0; position: relative; padding: 2rem 1rem; min-height: 100vh; display: flex; flex-direction: column;">
-		<nav class="hamburger-menu">
-			<input type="checkbox" id="menu-toggle" />
-			<label for="menu-toggle" class="menu-icon">
-				<svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-					<line x1="3" y1="12" x2="21" y2="12"></line>
-					<line x1="3" y1="6" x2="21" y2="6"></line>
-					<line x1="3" y1="18" x2="21" y2="18"></line>
-				</svg>
-			</label>
-			
-			<div class="menu-content">
-				<div class="menu-label">Navigation</div>
-				<a href="/" class="menu-link">Home</a>
-				
-				<div class="divider-small"></div>
-				
-
-
-
-				
-				<div class="menu-label">Documentation</div>
-				{docs.map(doc => (
-					<a href={`/docs/${doc.slug}`} class="menu-link">{doc.title}</a>
+	<body style="margin: 0; position: relative; min-height: 100vh; display: flex; flex-direction: column;">
+		<nav class="mega-menu-nav">
+			<button class="mobile-menu-btn" onclick="document.getElementById('mega-list').classList.toggle('active')">☰ MENU</button>
+			<ul class="mega-menu-list" id="mega-list">
+				{menus.map(menu => (
+					<li class="mega-menu-item">
+						<a class="mega-menu-link">
+							{menu.title}
+							{menu.items && menu.items.length > 0 ? ' ▾' : ''}
+						</a>
+						{menu.items && menu.items.length > 0 && (
+							<div class="mega-menu-dropdown">
+								{menu.items.map((item: any) => (
+									<a href={item.url} class="mega-dropdown-link">{item.label}</a>
+								))}
+							</div>
+						)}
+					</li>
 				))}
-				
 				{policies.length > 0 && (
-					<>
-						<div class="divider-small"></div>
-						<div class="menu-label">Company Policies</div>
-						{policies.map(policy => (
-							<a href={`/policies/${policy.slug}`} class="menu-link">{policy.title}</a>
-						))}
-					</>
+					<li class="mega-menu-item">
+						<a class="mega-menu-link">POLICIES ▾</a>
+						<div class="mega-menu-dropdown">
+							{policies.map(policy => (
+								<a href={`/policies/${policy.slug}`} class="mega-dropdown-link">{policy.title}</a>
+							))}
+						</div>
+					</li>
 				)}
-			</div>
+			</ul>
 		</nav>
 
 		<main class="container text-center" style="max-width: 1000px; padding: 2rem; margin: auto;">
