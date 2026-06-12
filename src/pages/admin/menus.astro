@@ -155,24 +155,52 @@ try {
 				const container = document.getElementById('subroutes-container');
 				container.innerHTML = '';
 				currentSubroutes.forEach((subroute, index) => {
+					if (!subroute.type) subroute.type = 'link';
+
 					const div = document.createElement('div');
 					div.className = 'subroute-item';
-					div.innerHTML = `
-						<input type="text" class="form-input" placeholder="Label (e.g. About Us)" value="${subroute.label}" onchange="updateSubroute(${index}, 'label', this.value)" required />
-						<input type="text" class="form-input" placeholder="URL (e.g. /about)" value="${subroute.url}" onchange="updateSubroute(${index}, 'url', this.value)" required />
-						<button type="button" class="remove-btn" onclick="removeSubroute(${index})">×</button>
+					div.style.flexDirection = 'column';
+					div.style.alignItems = 'stretch';
+					div.style.border = '1px solid var(--border-color)';
+					div.style.padding = '1rem';
+					div.style.borderRadius = '8px';
+					div.style.marginBottom = '1rem';
+
+					let innerHtml = `
+						<div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem; align-items: center;">
+							<input type="text" class="form-input" placeholder="Label (e.g. About Us)" value="${subroute.label || ''}" onchange="updateSubroute(${index}, 'label', this.value)" required style="flex: 1;" />
+							<select class="form-input" onchange="updateSubroute(${index}, 'type', this.value)" style="flex: 1;">
+								<option value="link" ${subroute.type === 'link' ? 'selected' : ''}>Link to URL</option>
+								<option value="page" ${subroute.type === 'page' ? 'selected' : ''}>Custom HTML Page</option>
+							</select>
+							<button type="button" class="remove-btn" onclick="removeSubroute(${index})">×</button>
+						</div>
 					`;
+
+					if (subroute.type === 'link') {
+						innerHtml += `<input type="text" class="form-input" placeholder="URL (e.g. /about or https://...)" value="${subroute.url || ''}" onchange="updateSubroute(${index}, 'url', this.value)" required />`;
+					} else {
+						innerHtml += `
+							<input type="text" class="form-input mb-2" placeholder="Page Slug (e.g. about-us)" value="${subroute.slug || ''}" onchange="updateSubroute(${index}, 'slug', this.value)" required />
+							<textarea class="form-input" rows="5" placeholder="Custom HTML Content" onchange="updateSubroute(${index}, 'content', this.value)" required style="font-family: monospace;">${subroute.content || ''}</textarea>
+						`;
+					}
+
+					div.innerHTML = innerHtml;
 					container.appendChild(div);
 				});
 			}
 
 			function addSubroute() {
-				currentSubroutes.push({ label: '', url: '' });
+				currentSubroutes.push({ label: '', type: 'link', url: '' });
 				renderSubroutes();
 			}
 
 			function updateSubroute(index, field, value) {
 				currentSubroutes[index][field] = value;
+				if (field === 'type') {
+					renderSubroutes();
+				}
 			}
 
 			function removeSubroute(index) {

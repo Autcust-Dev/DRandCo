@@ -176,7 +176,7 @@ try {
 					<>
 						<div class="menu-label">{menu.title}</div>
 						{menu.items && menu.items.map((item: any) => (
-							<a href={item.url} class="sub-menu-link">{item.label}</a>
+							<a href={item.type === 'page' ? `/p/${item.slug}` : item.url} class="sub-menu-link">{item.label}</a>
 						))}
 						<div class="divider-small"></div>
 					</>
