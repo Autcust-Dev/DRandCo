@@ -18,10 +18,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     const adminEmail = import.meta.env.ADMIN_EMAIL;
     const jwtSecret = import.meta.env.JWT_SECRET || 'fallback_secret_for_dev_only';
-    
+
     if (!adminEmail) {
       console.warn("ADMIN_EMAIL is not set in environment variables.");
-      return new Response(JSON.stringify({ error: 'Server configuration error' }), { 
+      return new Response(JSON.stringify({ error: 'Server configuration error' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' }
       });
@@ -70,7 +70,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     });
   } catch (error) {
     console.error('Request OTP Error:', error);
-    return new Response(JSON.stringify({ error: 'Internal Server Error' }), { 
+    return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
