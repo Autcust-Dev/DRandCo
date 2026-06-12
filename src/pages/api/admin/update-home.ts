@@ -10,16 +10,22 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   }
 
   try {
-    const { homeHtml, appLinks } = await request.json();
+    const body = await request.json();
+    console.log('[Admin API: update-home] Received body:', body);
+    
+    const { homeHtml, appLinks } = body;
 
-    const updateData: any = {
-      homeHtml
-    };
+    const updateData: any = {};
+    
+    if (homeHtml !== undefined) {
+      updateData.homeHtml = homeHtml;
+    }
 
     if (Array.isArray(appLinks)) {
       updateData.appLinks = appLinks;
     }
 
+    console.log('[Admin API: update-home] Updating DB with:', updateData);
     await db.collection('site_content').doc('home').set(updateData, { merge: true });
 
     console.info('[Admin API: update-home] Action completed successfully.');

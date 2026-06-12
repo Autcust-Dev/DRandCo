@@ -123,10 +123,8 @@ try {
 					});
 
 					if (res.ok) {
-						if (homeMsg) {
-							homeMsg.innerText = 'Changes saved successfully!';
-							homeMsg.style.color = '#48bb78';
-						}
+						alert('Changes saved successfully!');
+						window.location.reload();
 					} else {
 						if (homeMsg) {
 							homeMsg.innerText = 'Failed to save changes.';
