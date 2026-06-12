@@ -7,18 +7,6 @@ import { db } from '../../lib/firebase';
 // Server-side authentication check
 const isAuthenticated = await verifyAdminSession(Astro.request, Astro.cookies);
 
-// Ensure CSRF token exists
-let csrfToken = Astro.cookies.get('csrf_token')?.value;
-if (!csrfToken) {
-  csrfToken = crypto.randomUUID();
-  Astro.cookies.set('csrf_token', csrfToken, {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'strict',
-    path: '/'
-  });
-}
-
 if (!isAuthenticated) {
   Astro.cookies.delete('admin_session', { path: '/' });
   return Astro.redirect('/admin/login');
@@ -49,7 +37,6 @@ try {
 			description="Admin Dashboard"
 			noindex={true}
 		/>
-		<meta name="csrf-token" content={csrfToken} />
 	</head>
 	<body>
 		<main class="container admin-layout">
@@ -107,13 +94,11 @@ try {
 				}
 
 				try {
-					const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement).content;
 
 					const res = await fetch('/api/admin/update-home', {
 						method: 'POST',
 						headers: { 
-							'Content-Type': 'application/json',
-							'X-CSRF-Token': csrfToken
+							'Content-Type': 'application/json'
 						},
 						body: JSON.stringify(),
 						credentials: 'same-origin'
