@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { db } from '../lib/firebase';
 
-const SITE_URL = 'https://drandco.com';
+const SITE_URL = 'https://www.dineshreddyco.com';
 
 export const GET: APIRoute = async () => {
   try {
