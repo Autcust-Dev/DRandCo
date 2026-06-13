@@ -462,7 +462,7 @@ a:hover {
 
 @media (max-width: 768px) {
   .container {
-    padding: 2rem 15px;
+    padding: 2rem 10px;
   }
 
   h1 {
@@ -497,7 +497,7 @@ a:hover {
   }
 
   .glass-panel {
-    padding: 1.5rem;
+    padding: 1.25rem 1rem;
   }
 
   .btn-huge {
