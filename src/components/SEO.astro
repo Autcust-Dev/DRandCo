@@ -54,3 +54,15 @@ const {
 <meta property="twitter:description" content={description} />
 <meta property="twitter:image" content={new URL(image, Astro.url)} />
 
+<!-- Designed, Developed & Powered by Autcust ,  https://autcust.com/ -->
+<script type="application/ld+json" set:html={JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "url": canonicalUrl,
+  "creator": {
+    "@type": "Organization",
+    "name": "Autcust",
+    "url": "https://autcust.com/",
+    "description": "Designed, Developed & Powered by Autcust"
+  }
+})} />
