@@ -165,6 +165,18 @@ try {
 				color: var(--text-main);
 			}
 
+			.submenu-container {
+				position: relative;
+			}
+			
+			.grand-children-wrapper {
+				display: none;
+			}
+
+			.submenu-container:hover .grand-children-wrapper {
+				display: block;
+			}
+
 			.divider-small {
 				height: 1px;
 				background: var(--border-color);
@@ -194,12 +206,14 @@ try {
 						<div class="menu-label">{menu.title}</div>
 						{menu.items && menu.items.map((item: any) => (
 							item.type === 'submenu' ? (
-								<>
-									<div class="sub-menu-link" style="color: var(--text-muted); pointer-events: none; margin-bottom: 0;">{item.label}</div>
-									{item.items && item.items.map((child: any) => (
-										<a href={child.type === 'page' ? `/p/${child.slug}` : child.url} class="grand-child-link">{child.label}</a>
-									))}
-								</>
+								<div class="submenu-container">
+									<div class="sub-menu-link" style="color: var(--text-main); margin-bottom: 0;">{item.label}</div>
+									<div class="grand-children-wrapper">
+										{item.items && item.items.map((child: any) => (
+											<a href={child.type === 'page' ? `/p/${child.slug}` : child.url} class="grand-child-link">{child.label}</a>
+										))}
+									</div>
+								</div>
 							) : (
 								<a href={item.type === 'page' ? `/p/${item.slug}` : item.url} class="sub-menu-link">{item.label}</a>
 							)
