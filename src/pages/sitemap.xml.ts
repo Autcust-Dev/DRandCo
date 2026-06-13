@@ -28,9 +28,37 @@ export const GET: APIRoute = async () => {
       urls.push(`${SITE_URL}/docs/${doc.id}`);
     });
 
+    // Fetch menus and recursively map items
+    const menusSnapshot = await db.collection('menus').get();
+    
+    const parseItems = (items: any[]) => {
+      if (!Array.isArray(items)) return;
+      
+      items.forEach(item => {
+        if (item.type === 'page' && item.slug) {
+          urls.push(`${SITE_URL}/p/${item.slug}`);
+        } else if (item.type === 'link' && item.url) {
+          if (item.url.startsWith('/')) {
+             urls.push(`${SITE_URL}${item.url === '/' ? '' : item.url}`);
+          }
+        } else if (item.type === 'submenu' && item.items) {
+          parseItems(item.items); // Recursive call for grandchildren
+        }
+      });
+    };
+
+    menusSnapshot.docs.forEach((doc) => {
+      const data = doc.data();
+      if (data.items) {
+        parseItems(data.items);
+      }
+    });
+
+    const uniqueUrls = [...new Set(urls)];
+
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  ${urls.map((url) => `
+  ${uniqueUrls.map((url) => `
   <url>
     <loc>${url}</loc>
     <lastmod>${new Date().toISOString()}</lastmod>
