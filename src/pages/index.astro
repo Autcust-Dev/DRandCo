@@ -148,6 +148,23 @@ try {
 				transform: translateX(4px);
 			}
 			
+			.grand-child-link {
+				display: block;
+				color: var(--text-muted);
+				text-decoration: none;
+				padding: 0.4rem 1rem 0.4rem 3rem;
+				border-radius: 8px;
+				transition: all 0.3s ease;
+				font-size: 0.8rem;
+				margin-bottom: 0.2rem;
+			}
+
+			.grand-child-link:hover {
+				background: rgba(31, 88, 130, 0.05);
+				transform: translateX(4px);
+				color: var(--text-main);
+			}
+
 			.divider-small {
 				height: 1px;
 				background: var(--border-color);
@@ -176,7 +193,16 @@ try {
 					<>
 						<div class="menu-label">{menu.title}</div>
 						{menu.items && menu.items.map((item: any) => (
-							<a href={item.type === 'page' ? `/p/${item.slug}` : item.url} class="sub-menu-link">{item.label}</a>
+							item.type === 'submenu' ? (
+								<>
+									<div class="sub-menu-link" style="color: var(--text-muted); pointer-events: none; margin-bottom: 0;">{item.label}</div>
+									{item.items && item.items.map((child: any) => (
+										<a href={child.type === 'page' ? `/p/${child.slug}` : child.url} class="grand-child-link">{child.label}</a>
+									))}
+								</>
+							) : (
+								<a href={item.type === 'page' ? `/p/${item.slug}` : item.url} class="sub-menu-link">{item.label}</a>
+							)
 						))}
 						<div class="divider-small"></div>
 					</>

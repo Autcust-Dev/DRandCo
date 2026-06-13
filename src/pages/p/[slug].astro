@@ -16,11 +16,19 @@ try {
 	for (const doc of snapshot.docs) {
 		const menuData = doc.data();
 		if (menuData.items) {
-			const found = menuData.items.find((item: any) => item.type === 'page' && item.slug === slug);
-			if (found) {
-				customPage = found;
-				break;
+			for (const item of menuData.items) {
+				if (item.type === 'page' && item.slug === slug) {
+					customPage = item;
+					break;
+				} else if (item.type === 'submenu' && item.items) {
+					const foundChild = item.items.find((child: any) => child.type === 'page' && child.slug === slug);
+					if (foundChild) {
+						customPage = foundChild;
+						break;
+					}
+				}
 			}
+			if (customPage) break;
 		}
 	}
 } catch (e) {

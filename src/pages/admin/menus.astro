@@ -156,6 +156,7 @@ try {
 				container.innerHTML = '';
 				currentSubroutes.forEach((subroute, index) => {
 					if (!subroute.type) subroute.type = 'link';
+					if (subroute.type === 'submenu' && !subroute.items) subroute.items = [];
 
 					const div = document.createElement('div');
 					div.className = 'subroute-item';
@@ -172,6 +173,7 @@ try {
 							<select class="form-input" onchange="updateSubroute(${index}, 'type', this.value)" style="flex: 1;">
 								<option value="link" ${subroute.type === 'link' ? 'selected' : ''}>Link to URL</option>
 								<option value="page" ${subroute.type === 'page' ? 'selected' : ''}>Custom HTML Page</option>
+								<option value="submenu" ${subroute.type === 'submenu' ? 'selected' : ''}>Submenu (Grandchildren)</option>
 							</select>
 							<button type="button" class="remove-btn" onclick="removeSubroute(${index})">×</button>
 						</div>
@@ -179,11 +181,37 @@ try {
 
 					if (subroute.type === 'link') {
 						innerHtml += `<input type="text" class="form-input" placeholder="URL (e.g. /about or https://...)" value="${subroute.url || ''}" onchange="updateSubroute(${index}, 'url', this.value)" required />`;
-					} else {
+					} else if (subroute.type === 'page') {
 						innerHtml += `
 							<input type="text" class="form-input mb-2" placeholder="Page Slug (e.g. about-us)" value="${subroute.slug || ''}" onchange="updateSubroute(${index}, 'slug', this.value)" required />
 							<textarea class="form-input" rows="5" placeholder="Custom HTML Content" onchange="updateSubroute(${index}, 'content', this.value)" required style="font-family: monospace;">${subroute.content || ''}</textarea>
 						`;
+					} else if (subroute.type === 'submenu') {
+						innerHtml += `<div style="margin-left: 2rem; border-left: 2px solid var(--border-color); padding-left: 1rem; margin-top: 1rem;">`;
+						subroute.items.forEach((child, childIndex) => {
+							if (!child.type) child.type = 'link';
+							innerHtml += `
+								<div style="border: 1px solid var(--border-color); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; background: rgba(255,255,255,0.02);">
+									<div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem; align-items: center;">
+										<input type="text" class="form-input" placeholder="Grandchild Label" value="${child.label || ''}" onchange="updateGrandchild(${index}, ${childIndex}, 'label', this.value)" required style="flex: 1;" />
+										<select class="form-input" onchange="updateGrandchild(${index}, ${childIndex}, 'type', this.value)" style="flex: 1;">
+											<option value="link" ${child.type === 'link' ? 'selected' : ''}>Link to URL</option>
+											<option value="page" ${child.type === 'page' ? 'selected' : ''}>Custom HTML Page</option>
+										</select>
+										<button type="button" class="remove-btn" onclick="removeGrandchild(${index}, ${childIndex})">×</button>
+									</div>
+							`;
+							if (child.type === 'link') {
+								innerHtml += `<input type="text" class="form-input" placeholder="URL" value="${child.url || ''}" onchange="updateGrandchild(${index}, ${childIndex}, 'url', this.value)" required />`;
+							} else {
+								innerHtml += `
+									<input type="text" class="form-input mb-2" placeholder="Page Slug" value="${child.slug || ''}" onchange="updateGrandchild(${index}, ${childIndex}, 'slug', this.value)" required />
+									<textarea class="form-input" rows="5" placeholder="Custom HTML Content" onchange="updateGrandchild(${index}, ${childIndex}, 'content', this.value)" required style="font-family: monospace;">${child.content || ''}</textarea>
+								`;
+							}
+							innerHtml += `</div>`;
+						});
+						innerHtml += `<button type="button" class="btn btn-secondary text-sm" onclick="addGrandchild(${index})">+ Add Grandchild</button></div>`;
 					}
 
 					div.innerHTML = innerHtml;
@@ -198,6 +226,9 @@ try {
 
 			function updateSubroute(index, field, value) {
 				currentSubroutes[index][field] = value;
+				if (field === 'type' && value === 'submenu' && !currentSubroutes[index].items) {
+					currentSubroutes[index].items = [];
+				}
 				if (field === 'type') {
 					renderSubroutes();
 				}
@@ -205,6 +236,24 @@ try {
 
 			function removeSubroute(index) {
 				currentSubroutes.splice(index, 1);
+				renderSubroutes();
+			}
+
+			function addGrandchild(parentIndex) {
+				if (!currentSubroutes[parentIndex].items) currentSubroutes[parentIndex].items = [];
+				currentSubroutes[parentIndex].items.push({ label: '', type: 'link', url: '' });
+				renderSubroutes();
+			}
+
+			function updateGrandchild(parentIndex, childIndex, field, value) {
+				currentSubroutes[parentIndex].items[childIndex][field] = value;
+				if (field === 'type') {
+					renderSubroutes();
+				}
+			}
+
+			function removeGrandchild(parentIndex, childIndex) {
+				currentSubroutes[parentIndex].items.splice(childIndex, 1);
 				renderSubroutes();
 			}
 
